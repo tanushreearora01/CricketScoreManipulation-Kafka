@@ -4,48 +4,70 @@ import json
 from kafka import KafkaProducer
 import time
 
-# ✅ Kafka configuration
+# Kafka configuration
 KAFKA_BROKER = "localhost:9092"
 TOPIC = "cricket_scores"
 
-# ✅ Initialize Kafka Producer
-producer = KafkaProducer(
-    bootstrap_servers=[KAFKA_BROKER],
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
-)
+# Initialize Kafka Producer
+try:
+    producer = KafkaProducer(
+        bootstrap_servers=[KAFKA_BROKER],
+        value_serializer=lambda v: json.dumps(v).encode('utf-8')
+    )
+    print("Connected to Kafka")
+except Exception as e:
+    print("Failed to connect to Kafka:", e)
+    exit(1)
 
-# ✅ Function to scrape cricket scores from the statistics page
+
+# Function to scrape match results
 def scrape_scores():
-    url = "https://www.espncricinfo.com/stats"  # Replace with the actual URL from your screenshot
-    response = requests.get(url)
+    url = "https://www.espncricinfo.com/live-cricket-match-results"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+
+    response = requests.get(url, headers=headers)
+
+    if response.status_code != 200:
+        print(f"Failed to fetch page, status code: {response.status_code}")
+        return []
+
     soup = BeautifulSoup(response.content, "html.parser")
 
-    # Locate the table containing match results
-    table = soup.find("table")  # Adjust selector if needed
-    rows = table.find_all("tr")[1:]  # Skip header row
+    # Locate match result containers
+    match_containers = soup.find_all("div", class_="ds-px-4 ds-py-3")
+
+    if not match_containers:
+        print("No match data found.")
+        return []
 
     scores = []
-    for row in rows:
-        cols = row.find_all("td")
-        if len(cols) < 4:
-            continue  # Skip invalid rows
+    for match in match_containers:
+        try:
+            teams = match.find_all("p", class_="ds-text-tight-m")
+            result_tag = match.find("p", class_="ds-text-tight-s")  # Check if exists
 
-        date = cols[0].text.strip()
-        teams = cols[1].text.strip()
-        venue = cols[2].text.strip()
-        result = cols[3].text.strip()
-        scorecard_link = cols[4].find("a")["href"] if cols[4].find("a") else "N/A"
+            if len(teams) < 2:
+                print("Skipping match due to missing team names.")
+                continue  # Skip incomplete match data
 
-        scores.append({
-            "date": date,
-            "teams": teams,
-            "venue": venue,
-            "result": result,
-            "scorecard": scorecard_link,
-            "timestamp": time.time()
-        })
+            team_1 = teams[0].text.strip()
+            team_2 = teams[1].text.strip()
+
+            # Handle missing result safely
+            result = result_tag.text.strip() if result_tag else "Result not available"
+
+            scores.append({
+                "teams": f"{team_1} vs {team_2}",
+                "result": result,
+                "timestamp": time.time()
+            })
+        except Exception as e:
+            print(f"⚠️ Error parsing match: {e}")
 
     return scores
+
 
 # ✅ Function to publish data to Kafka
 def publish_to_kafka():
@@ -54,15 +76,20 @@ def publish_to_kafka():
             scores = scrape_scores()
             if scores:
                 for record in scores:
-                    producer.send(TOPIC, record)
+                    try:
+                        producer.send(TOPIC, record)
+                    except Exception as kafka_error:
+                        print("Error sending to Kafka:", kafka_error)
                 producer.flush()
-                print("Published to Kafka:", scores)
+                print("✅ Published to Kafka:", scores)
             else:
-                print("No match data found.")
+                print("⚠️ No new match data found.")
+
         except Exception as e:
             print("Error:", e)
 
-        time.sleep(60)  # Adjust frequency of scraping
+        time.sleep(60)  # Scrape every 60 seconds
+
 
 if __name__ == "__main__":
     publish_to_kafka()

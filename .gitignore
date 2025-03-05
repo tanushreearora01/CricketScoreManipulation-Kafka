@@ -1,0 +1,40 @@
+gnore PyCharm specific files
+.idea/
+*.iml
+
+# Ignore Python bytecode
+__pycache__/
+*.py[cod]
+
+# Ignore Virtual Environment
+.venv/
+env/
+venv/
+
+# Ignore Logs and Cache
+*.log
+*.cache
+*.pytest_cache/
+
+# Ignore compiled files
+*.so
+*.o
+*.a
+*.pyc
+
+# Ignore Jupyter Notebooks checkpoints (if used)
+.ipynb_checkpoints/
+
+# Ignore data files
+*.csv
+*.json
+*.xml
+
+# Ignore Kafka logs and data (if applicable)
+kafka-logs/
+zookeeper/
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
