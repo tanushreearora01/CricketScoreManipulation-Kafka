@@ -69,7 +69,7 @@ def scrape_scores():
     return scores
 
 
-# ✅ Function to publish data to Kafka
+# Function to publish data to Kafka
 def publish_to_kafka():
     while True:
         try:
@@ -81,9 +81,9 @@ def publish_to_kafka():
                     except Exception as kafka_error:
                         print("Error sending to Kafka:", kafka_error)
                 producer.flush()
-                print("✅ Published to Kafka:", scores)
+                print("Published to Kafka:", scores)
             else:
-                print("⚠️ No new match data found.")
+                print("No new match data found.")
 
         except Exception as e:
             print("Error:", e)
