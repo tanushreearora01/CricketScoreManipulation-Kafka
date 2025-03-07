@@ -64,7 +64,7 @@ def scrape_scores():
                 "timestamp": time.time()
             })
         except Exception as e:
-            print(f"⚠️ Error parsing match: {e}")
+            print(f"Error parsing match: {e}")
 
     return scores
 
