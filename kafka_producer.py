@@ -5,7 +5,7 @@ from kafka import KafkaProducer
 import time
 
 # Kafka configuration
-KAFKA_BROKER = "localhost:9092"
+KAFKA_BROKER = "kafka:9092" # Connect to Kafka inside the Docker
 TOPIC = "cricket_scores"
 
 # Initialize Kafka Producer
