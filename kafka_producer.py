@@ -58,11 +58,16 @@ def scrape_scores():
             # Handle missing result safely
             result = result_tag.text.strip() if result_tag else "Result not available"
 
-            scores.append({
-                "teams": f"{team_1} vs {team_2}",
-                "result": result,
-                "timestamp": time.time()
-            })
+            # ✅ **Transform Data Before Sending to Kafka**
+            structured_data = {
+                "team_1": team_1,
+                "team_2": team_2,
+                "match_result": result,
+                "timestamp": time.time()  # Adding timestamp for tracking
+            }
+
+            scores.append(structured_data)  # Store structured data
+
         except Exception as e:
             print(f"Error parsing match: {e}")
 
@@ -77,7 +82,7 @@ def publish_to_kafka():
             if scores:
                 for record in scores:
                     try:
-                        producer.send(TOPIC, record)
+                        producer.send(TOPIC, record)  # ✅ Send transformed data to Kafka
                     except Exception as kafka_error:
                         print("Error sending to Kafka:", kafka_error)
                 producer.flush()
