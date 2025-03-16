@@ -14,7 +14,7 @@ if not os.getenv("RUNNING_IN_DOCKER"):
 
 TOPIC = "cricket_scores"
 
-# Initialize Kafka Producer
+# Initialize Kafka producer
 try:
     producer = KafkaProducer(
         bootstrap_servers=[KAFKA_BROKER],
