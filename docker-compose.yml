@@ -33,8 +33,33 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql  #  Persistent MySQL data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  #  Mount `init.sql` for automatic execution
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  cricket_producer:
+    build: .
+    container_name: cricket_producer
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_BROKER=kafka:9093
+      - RUNNING_IN_DOCKER=true
+    volumes:
+      - .:/app
+    command: ["python", "kafka_producer.py"]
+
+  cricket_consumer:
+    build: .
+    container_name: cricket_consumer
+    depends_on:
+      - kafka
+      - mysql
+    environment:
+      - KAFKA_BROKER=kafka:9093
+      - MYSQL_HOST=mysql-db
+    volumes:
+      - .:/app
+    command: ["python", "kafka_consumer.py"]
 
 volumes:
   mysql_data:
